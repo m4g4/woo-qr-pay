@@ -8,9 +8,11 @@ if (!defined('ABSPATH')) {
 
 const OPTION_QR_SIZE = 'woo_qr_pay_qr_size';
 const DEFAULT_QR_SIZE = 220;
+const MIN_QR_SIZE = 64;
+const MAX_QR_SIZE = 1000;
 
 function sanitize_qr_size($size) {
-	return max(120, min((int) $size, 1000));
+	return max(MIN_QR_SIZE, min((int) $size, MAX_QR_SIZE));
 }
 
 function get_configured_qr_size() {
@@ -46,9 +48,11 @@ function register_plugin_settings() {
 
 function render_qr_size_field() {
 	printf(
-		'<input type="number" min="120" max="1000" step="1" name="%1$s" value="%2$d" class="small-text" />',
+		'<input type="number" min="%3$d" max="%4$d" step="1" name="%1$s" value="%2$d" class="small-text" />',
 		esc_attr(OPTION_QR_SIZE),
-		(int) get_configured_qr_size()
+		(int) get_configured_qr_size(),
+		(int) MIN_QR_SIZE,
+		(int) MAX_QR_SIZE
 	);
 	echo '<p class="description">' . esc_html__('Used as the default QR image size when no explicit size is provided.', 'woo-qr-pay') . '</p>';
 }
@@ -104,8 +108,8 @@ function add_wc_settings($settings) {
 		'desc'              => __('Used as the default QR image size.', 'woo-qr-pay'),
 		'desc_tip'          => true,
 		'custom_attributes' => array(
-			'min'  => 120,
-			'max'  => 1000,
+			'min'  => MIN_QR_SIZE,
+			'max'  => MAX_QR_SIZE,
 			'step' => 1,
 		),
 	);

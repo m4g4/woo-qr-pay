@@ -15,10 +15,11 @@ The plugin can return QR data as:
 ## Features
 
 - Generates QR codes locally (no external API required)
-- Configurable default QR size (`120` to `1000` px)
+- Configurable default QR size (`64` to `1000` px)
 - Admin settings page in WordPress
 - WooCommerce settings field under **Advanced**
 - Global helper functions for use in themes and plugins
+- Automatically shows QR on the order-received (thank-you) page for bank transfer orders
 
 ## Requirements
 
@@ -34,7 +35,6 @@ The plugin can return QR data as:
 1. Place plugin in:
    - `wp-content/plugins/woo-qr-pay`
 2. Ensure QR library source is available for the loader.
-   - The plugin loader expects: `wp-content/plugins/woo-qr-pay/vendor/php-qrcode/src/`
 3. Activate **Woo Pay With a QR Code** in WordPress admin.
 
 ## Settings
@@ -47,6 +47,17 @@ You can configure the default QR size in either place:
 Option key used internally:
 
 - `woo_qr_pay_qr_size`
+
+## Checkout / Thank-You Page Behavior
+
+After a customer places an order with payment method `Direct bank transfer (bacs)`, the plugin injects a QR payment field into each BACS account block on the thank-you page.
+
+- If billing country is `SK`, plugin tries `PAY by square` first
+- If PAY by square is unavailable/fails, plugin falls back to `SEPA`
+- For non-SK billing countries, plugin uses `SEPA`
+- If multiple bank accounts are configured, each account block gets its own QR code
+
+For BACS thank-you rendering, the plugin uses each configured WooCommerce BACS account (`woocommerce_bacs_accounts`) and generates QR per account block.
 
 ## Public Helper Functions
 
@@ -75,6 +86,7 @@ Optional keys:
 
 - `swift`
 - `amount`
+- `size` (QR size in px; if omitted, plugin setting is used)
 - `vs`
 - `ks`
 - `ss`
@@ -92,31 +104,10 @@ Optional keys:
 
 - `bic`
 - `amount`
+- `size` (QR size in px; if omitted, plugin setting is used)
 - `purpose` (4 letters)
 - `reference`
 - `message`
-
-## Example (Template Usage)
-
-```php
-<?php
-$qr = woo_qr_pay_get_pay_by_square_qr_image_tag(
-	array(
-		'recipient' => 'AR MUSIC s.r.o.',
-		'iban'      => 'SK3683300000002200433678',
-		'swift'     => 'FIOZSKBAXXX',
-		'amount'    => 123.45,
-		'vs'        => '20260001',
-		'note'      => 'Faktura 20260001',
-	),
-	null,
-	'PAY by square'
-);
-
-if (!is_wp_error($qr) && !empty($qr)) {
-	echo $qr; // <img ... />
-}
-```
 
 ## Error Handling
 

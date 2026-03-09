@@ -69,4 +69,38 @@ if (!function_exists('woo_qr_pay_get_pay_by_square_qr_image_tag')) {
 	}
 }
 
+if (!function_exists('woo_qr_pay_get_bacs_account_details')) {
+	function woo_qr_pay_get_bacs_account_details() {
+		return \WooQrPay\get_bacs_account_details();
+	}
+}
+
+if (!function_exists('woo_qr_pay_render_order_qr_on_thankyou')) {
+	function woo_qr_pay_render_order_qr_on_thankyou($order_id) {
+		return \WooQrPay\render_order_qr_on_thankyou($order_id);
+	}
+}
+
+if (!function_exists('woo_qr_pay_add_qr_to_bacs_account_fields')) {
+	function woo_qr_pay_add_qr_to_bacs_account_fields($fields, $order_id) {
+		return \WooQrPay\add_qr_to_bacs_account_fields($fields, $order_id);
+	}
+}
+
+if (!function_exists('woo_qr_pay_allow_data_protocol_for_kses')) {
+	function woo_qr_pay_allow_data_protocol_for_kses($protocols) {
+		return \WooQrPay\allow_data_protocol_for_kses($protocols);
+	}
+}
+
+if (!function_exists('woo_qr_pay_render_bacs_qr_styles')) {
+	function woo_qr_pay_render_bacs_qr_styles() {
+		return \WooQrPay\render_bacs_qr_styles();
+	}
+}
+
+add_filter('woocommerce_bacs_account_fields', 'woo_qr_pay_add_qr_to_bacs_account_fields', 20, 2);
+add_filter('kses_allowed_protocols', 'woo_qr_pay_allow_data_protocol_for_kses', 20, 1);
+add_action('wp_head', 'woo_qr_pay_render_bacs_qr_styles', 20);
+
 ?>

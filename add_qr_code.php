@@ -223,8 +223,20 @@ function load_local_qr_library() {
 		require_once $settings_shim;
 	}
 
-	$src_dir = __DIR__ . '/vendor/php-qrcode/src/';
-	if (!is_dir($src_dir)) {
+	$src_dir = '';
+	$candidate_dirs = array(
+		__DIR__ . '/php-qrcode/src/',
+		__DIR__ . '/vendor/php-qrcode/src/',
+	);
+
+	foreach ($candidate_dirs as $candidate_dir) {
+		if (is_dir($candidate_dir)) {
+			$src_dir = $candidate_dir;
+			break;
+		}
+	}
+
+	if ($src_dir === '') {
 		return false;
 	}
 
@@ -249,6 +261,20 @@ function load_local_qr_library() {
 	}
 
 	return class_exists('\chillerlan\QRCode\QRCode', true);
+}
+
+function resolve_qr_size($size = null, array $payment_data = array()) {
+	if (($size === null || $size === '') && isset($payment_data['size'])) {
+		$size = $payment_data['size'];
+	}
+
+	if ($size === null || $size === '') {
+		$size = function_exists(__NAMESPACE__ . '\\get_configured_qr_size')
+			? get_configured_qr_size()
+			: 320;
+	}
+
+	return max(64, min((int) $size, 1000));
 }
 
 /**
@@ -277,19 +303,14 @@ function get_sepa_qr_image_data(array $payment_data, $size = null, $as_base64 = 
 		);
 	}
 
-	if ($size === null || $size === '') {
-		$size = function_exists(__NAMESPACE__ . '\\get_configured_qr_size')
-			? get_configured_qr_size()
-			: 320;
-	}
-
-	$size = max(120, min((int) $size, 1000));
+	$size = resolve_qr_size($size, $payment_data);
 	$scale = max(4, min(12, (int) floor($size / 34)));
 
 	$options = new \chillerlan\QRCode\QROptions(
 		array(
 			'outputInterface' => \chillerlan\QRCode\Output\QRGdImagePNG::class,
 			'eccLevel'        => 'M',
+			'addQuietzone'    => false,
 			'outputBase64'    => (bool) $as_base64,
 			'scale'           => $scale,
 		)
@@ -318,19 +339,14 @@ function get_sepa_qr_image_tag(array $payment_data, $size = null, $alt = '') {
 	}
 
 	$alt_text = $alt !== '' ? $alt : __('SEPA payment QR code', 'woo-qr-pay');
-	if ($size === null || $size === '') {
-		$size = function_exists(__NAMESPACE__ . '\\get_configured_qr_size')
-			? get_configured_qr_size()
-			: 320;
-	}
-	$size = max(120, min((int) $size, 1000));
+	$size = resolve_qr_size($size, $payment_data);
 
 	$src = (is_string($url) && strpos($url, 'data:image/') === 0)
 		? esc_attr($url)
 		: esc_url($url);
 
 	return sprintf(
-		'<img src="%1$s" width="%2$d" height="%2$d" alt="%3$s" loading="lazy" />',
+		'<img src="%1$s" width="%2$d" height="%2$d" alt="%3$s" loading="lazy" style="display:block;margin:0 auto;" />',
 		$src,
 		$size,
 		esc_attr($alt_text)
@@ -346,6 +362,8 @@ function get_pay_by_square_qr_image_data(array $payment_data, $size = null, $as_
 	if (is_wp_error($payload)) {
 		return $payload;
 	}
+
+	$size = resolve_qr_size($size, $payment_data);
 
 	return render_qr_payload_as_image($payload, $size, $as_base64);
 }
@@ -368,19 +386,14 @@ function render_qr_payload_as_image($payload, $size = null, $as_base64 = true) {
 		);
 	}
 
-	if ($size === null || $size === '') {
-		$size = function_exists(__NAMESPACE__ . '\\get_configured_qr_size')
-			? get_configured_qr_size()
-			: 320;
-	}
-
-	$size = max(120, min((int) $size, 1000));
+	$size = resolve_qr_size($size);
 	$scale = max(4, min(12, (int) floor($size / 34)));
 
 	$options = new \chillerlan\QRCode\QROptions(
 		array(
 			'outputInterface' => \chillerlan\QRCode\Output\QRGdImagePNG::class,
 			'eccLevel'        => 'M',
+			'addQuietzone'    => false,
 			'outputBase64'    => (bool) $as_base64,
 			'scale'           => $scale,
 		)
@@ -403,21 +416,276 @@ function get_pay_by_square_qr_image_tag(array $payment_data, $size = null, $alt 
 	}
 
 	$alt_text = $alt !== '' ? $alt : __('PAY by square QR code', 'woo-qr-pay');
-	if ($size === null || $size === '') {
-		$size = function_exists(__NAMESPACE__ . '\\get_configured_qr_size')
-			? get_configured_qr_size()
-			: 320;
-	}
-	$size = max(120, min((int) $size, 1000));
+	$size = resolve_qr_size($size, $payment_data);
 
 	$src = (is_string($url) && strpos($url, 'data:image/') === 0)
 		? esc_attr($url)
 		: esc_url($url);
 
 	return sprintf(
-		'<img src="%1$s" width="%2$d" height="%2$d" alt="%3$s" loading="lazy" />',
+		'<img src="%1$s" width="%2$d" height="%2$d" alt="%3$s" loading="lazy" style="display:block;margin:0 auto;" />',
 		$src,
 		$size,
 		esc_attr($alt_text)
 	);
+}
+
+function get_bacs_account_details() {
+	$accounts = get_option('woocommerce_bacs_accounts', array());
+
+	if (!is_array($accounts)) {
+		$accounts = array();
+	}
+
+	$primary = isset($accounts[0]) && is_array($accounts[0]) ? $accounts[0] : array();
+
+	$recipient = isset($primary['account_name']) ? trim((string) $primary['account_name']) : '';
+	$iban = isset($primary['iban']) ? trim((string) $primary['iban']) : '';
+	$bic = isset($primary['bic']) ? trim((string) $primary['bic']) : '';
+
+	if ($recipient === '' || $iban === '') {
+		$bacs_settings = get_option('woocommerce_bacs_settings', array());
+
+		if (is_array($bacs_settings)) {
+			if ($recipient === '' && isset($bacs_settings['title'])) {
+				$recipient = trim((string) $bacs_settings['title']);
+			}
+
+			if ($iban === '' && isset($bacs_settings['iban'])) {
+				$iban = trim((string) $bacs_settings['iban']);
+			}
+
+			if ($bic === '' && isset($bacs_settings['bic'])) {
+				$bic = trim((string) $bacs_settings['bic']);
+			}
+		}
+	}
+
+	if ($recipient === '' || $iban === '') {
+		error_log('[woo-qr-pay] Missing BACS account_name or IBAN in WooCommerce settings.');
+		return null;
+	}
+
+	return array(
+		'recipient' => $recipient,
+		'iban'      => $iban,
+		'bic'       => $bic,
+	);
+}
+
+function render_order_qr_on_thankyou($order_id) {
+	if (!function_exists('wc_get_order')) {
+		error_log('[woo-qr-pay] WooCommerce is not available, cannot render QR on thank-you page.');
+		return;
+	}
+
+	$order = wc_get_order($order_id);
+	if (!$order) {
+		error_log('[woo-qr-pay] Order not found, cannot render QR on thank-you page. order_id=' . (string) $order_id);
+		return;
+	}
+
+	if ($order->get_payment_method() !== 'bacs') {
+		error_log('[woo-qr-pay] Skipping QR on thank-you page because payment method is not bacs. order_id=' . (string) $order_id . ', method=' . (string) $order->get_payment_method());
+		return;
+	}
+
+	$account = get_bacs_account_details();
+	if (!$account) {
+		error_log('[woo-qr-pay] Missing bank account data, cannot render QR on thank-you page. order_id=' . (string) $order_id);
+		return;
+	}
+
+	$billing_country = strtoupper((string) $order->get_billing_country());
+	$invoice_ref = method_exists($order, 'get_order_number') ? $order->get_order_number() : (string) $order->get_id();
+	$amount = (float) $order->get_total();
+	$description = '';
+	$qr = null;
+
+	if ($billing_country === 'SK') {
+		$qr = get_pay_by_square_qr_image_tag(
+			array(
+				'recipient' => $account['recipient'],
+				'iban'      => $account['iban'],
+				'swift'     => $account['bic'],
+				'amount'    => $amount,
+				'vs'        => preg_replace('/\D+/', '', $invoice_ref),
+				'note'      => sprintf('Objednavka %s', $invoice_ref),
+			),
+			null,
+			'PAY by square'
+		);
+		$description = __('Pay by square', 'woo-qr-pay');
+	}
+
+	if (is_wp_error($qr) || empty($qr)) {
+		$qr = get_sepa_qr_image_tag(
+			array(
+				'name'      => $account['recipient'],
+				'iban'      => $account['iban'],
+				'bic'       => $account['bic'],
+				'amount'    => $amount,
+				'reference' => $invoice_ref,
+				'message'   => sprintf('Objednavka %s', $invoice_ref),
+			),
+			null,
+			'SEPA QR code'
+		);
+		$description = __('SEPA QR payment', 'woo-qr-pay');
+	}
+
+	if (is_wp_error($qr) || empty($qr)) {
+		error_log('[woo-qr-pay] QR code generation failed on thank-you page. order_id=' . (string) $order_id . ', reason=' . (is_wp_error($qr) ? $qr->get_error_message() : 'No QR code generated'));
+		return;
+	}
+
+	?>
+
+	<div style="text-align:center;">
+		<?php echo $qr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+		<?php if ($description !== '') : ?>
+			<p style="margin:8px 0 0;"><?php echo esc_html($description); ?></p>
+		<?php endif; ?>
+	</div>
+		
+	<?php
+}
+
+function add_qr_to_bacs_account_fields($fields, $order_id) {
+	if (!is_array($fields) || !function_exists('wc_get_order')) {
+		return $fields;
+	}
+
+	$order = wc_get_order($order_id);
+	if (!$order) {
+		return $fields;
+	}
+
+	$iban = isset($fields['iban']['value']) ? trim((string) $fields['iban']['value']) : '';
+	if ($iban === '') {
+		return $fields;
+	}
+
+	$bic = isset($fields['bic']['value']) ? trim((string) $fields['bic']['value']) : '';
+	$recipient = '';
+
+	$accounts = get_option('woocommerce_bacs_accounts', array());
+	if (is_array($accounts)) {
+		$iban_normalized = strtoupper(str_replace(' ', '', $iban));
+		foreach ($accounts as $account) {
+			if (!is_array($account)) {
+				continue;
+			}
+
+			$account_iban = isset($account['iban']) ? strtoupper(str_replace(' ', '', (string) $account['iban'])) : '';
+			if ($account_iban === $iban_normalized) {
+				$recipient = isset($account['account_name']) ? trim((string) $account['account_name']) : '';
+				break;
+			}
+		}
+	}
+
+	if ($recipient === '') {
+		$recipient = isset($fields['bank_name']['value']) ? trim((string) $fields['bank_name']['value']) : '';
+	}
+	if ($recipient === '') {
+		$recipient = (string) get_bloginfo('name');
+	}
+
+	$billing_country = strtoupper((string) $order->get_billing_country());
+	$invoice_ref = method_exists($order, 'get_order_number') ? $order->get_order_number() : (string) $order->get_id();
+	$amount = (float) $order->get_total();
+	$qr_size = function_exists(__NAMESPACE__ . '\\get_configured_qr_size')
+		? get_configured_qr_size()
+		: 220;
+	$qr = null;
+	$description = '';
+
+	if ($billing_country === 'SK') {
+		$qr = get_pay_by_square_qr_image_tag(
+			array(
+				'recipient' => $recipient,
+				'iban'      => $iban,
+				'swift'     => $bic,
+				'amount'    => $amount,
+				'vs'        => preg_replace('/\D+/', '', $invoice_ref),
+				'note'      => sprintf('Objednavka %s', $invoice_ref),
+			),
+			$qr_size,
+			'PAY by square'
+		);
+		$description = __('Pay by square', 'woo-qr-pay');
+	}
+
+	if (is_wp_error($qr) || empty($qr)) {
+		$qr = get_sepa_qr_image_tag(
+			array(
+				'name'      => $recipient,
+				'iban'      => $iban,
+				'bic'       => $bic,
+				'amount'    => $amount,
+				'reference' => $invoice_ref,
+				'message'   => sprintf('Objednavka %s', $invoice_ref),
+			),
+			$qr_size,
+			'SEPA QR code'
+		);
+		$description = __('SEPA QR payment', 'woo-qr-pay');
+	}
+
+	if (is_wp_error($qr) || empty($qr)) {
+		error_log('[woo-qr-pay] QR generation failed in woocommerce_bacs_account_fields. order_id=' . (string) $order_id . ', reason=' . (is_wp_error($qr) ? $qr->get_error_message() : 'No QR code generated'));
+		return $fields;
+	}
+
+	$fields['qr_code'] = array(
+		'label' => __('QR payment', 'woo-qr-pay'),
+		'value' => '<span class="woo-qr-pay-bacs-field">' . $qr . '<small class="woo-qr-pay-bacs-caption">' . esc_html($description) . '</small></span>',
+	);
+
+	return $fields;
+}
+
+function allow_data_protocol_for_kses($protocols) {
+	if (!is_array($protocols)) {
+		return $protocols;
+	}
+
+	if (!in_array('data', $protocols, true)) {
+		$protocols[] = 'data';
+	}
+
+	return $protocols;
+}
+
+function render_bacs_qr_styles() {
+	if (!function_exists('is_order_received_page') || !is_order_received_page()) {
+		return;
+	}
+	?>
+	<style id="woo-qr-pay-bacs-styles">
+		.woocommerce-bacs-bank-details .bacs_details li.qr_code {
+			text-align: left;
+		}
+		.woocommerce-bacs-bank-details .bacs_details li.qr_code strong {
+			font-weight: 400;
+			text-align: left;
+			vertical-align: top;
+		}
+		.woocommerce-bacs-bank-details .bacs_details li.qr_code .woo-qr-pay-bacs-field {
+			display: inline-block;
+			text-align: left;
+			padding: 8px 0;
+		}
+		.woocommerce-bacs-bank-details .bacs_details li.qr_code .woo-qr-pay-bacs-field img {
+			display: block;
+			margin: 0;
+		}
+		.woocommerce-bacs-bank-details .bacs_details li.qr_code .woo-qr-pay-bacs-caption {
+			display: block;
+			margin-top: 4px;
+			text-align: center;
+		}
+	</style>
+	<?php
 }
