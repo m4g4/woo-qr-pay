@@ -11,12 +11,25 @@ const DEFAULT_QR_SIZE = 220;
 const MIN_QR_SIZE = 64;
 const MAX_QR_SIZE = 1000;
 
+const OPTION_QR_RETENTION_DAYS = 'woo_qr_pay_retention_days';
+const DEFAULT_RETENTION_DAYS = 30;
+const MIN_RETENTION_DAYS = 1;
+const MAX_RETENTION_DAYS = 3650;
+
 function sanitize_qr_size($size) {
 	return max(MIN_QR_SIZE, min((int) $size, MAX_QR_SIZE));
 }
 
+function sanitize_retention_days($days) {
+	return max(MIN_RETENTION_DAYS, min((int) $days, MAX_RETENTION_DAYS));
+}
+
 function get_configured_qr_size() {
 	return sanitize_qr_size(get_option(OPTION_QR_SIZE, DEFAULT_QR_SIZE));
+}
+
+function get_configured_retention_days() {
+	return sanitize_retention_days(get_option(OPTION_QR_RETENTION_DAYS, DEFAULT_RETENTION_DAYS));
 }
 
 function register_plugin_settings() {
@@ -27,6 +40,16 @@ function register_plugin_settings() {
 			'type'              => 'integer',
 			'sanitize_callback' => __NAMESPACE__ . '\\sanitize_qr_size',
 			'default'           => DEFAULT_QR_SIZE,
+		)
+	);
+
+	register_setting(
+		'woo_qr_pay_settings',
+		OPTION_QR_RETENTION_DAYS,
+		array(
+			'type'              => 'integer',
+			'sanitize_callback' => __NAMESPACE__ . '\\sanitize_retention_days',
+			'default'           => DEFAULT_RETENTION_DAYS,
 		)
 	);
 
@@ -44,6 +67,14 @@ function register_plugin_settings() {
 		'woo_qr_pay_settings',
 		'woo_qr_pay_main'
 	);
+
+	add_settings_field(
+		OPTION_QR_RETENTION_DAYS,
+		__('Keep QR images for (days)', 'woo-qr-pay'),
+		__NAMESPACE__ . '\\render_retention_days_field',
+		'woo_qr_pay_settings',
+		'woo_qr_pay_main'
+	);
 }
 
 function render_qr_size_field() {
@@ -55,6 +86,17 @@ function render_qr_size_field() {
 		(int) MAX_QR_SIZE
 	);
 	echo '<p class="description">' . esc_html__('Used as the default QR image size when no explicit size is provided.', 'woo-qr-pay') . '</p>';
+}
+
+function render_retention_days_field() {
+	printf(
+		'<input type="number" min="%3$d" max="%4$d" step="1" name="%1$s" value="%2$d" class="small-text" />',
+		esc_attr(OPTION_QR_RETENTION_DAYS),
+		(int) get_configured_retention_days(),
+		(int) MIN_RETENTION_DAYS,
+		(int) MAX_RETENTION_DAYS
+	);
+	echo '<p class="description">' . esc_html__('QR code image files older than this many days will be deleted automatically.', 'woo-qr-pay') . '</p>';
 }
 
 function add_plugin_settings_page() {
@@ -115,6 +157,20 @@ function add_wc_settings($settings) {
 	);
 
 	$settings[] = array(
+		'title'             => __('Keep QR images for (days)', 'woo-qr-pay'),
+		'id'                => OPTION_QR_RETENTION_DAYS,
+		'type'              => 'number',
+		'default'           => (string) DEFAULT_RETENTION_DAYS,
+		'desc'              => __('QR code image files older than this many days will be deleted by daily cleanup.', 'woo-qr-pay'),
+		'desc_tip'          => true,
+		'custom_attributes' => array(
+			'min'  => MIN_RETENTION_DAYS,
+			'max'  => MAX_RETENTION_DAYS,
+			'step' => 1,
+		),
+	);
+
+	$settings[] = array(
 		'type' => 'sectionend',
 		'id'   => 'woo_qr_pay_section',
 	);
@@ -122,14 +178,19 @@ function add_wc_settings($settings) {
 	return $settings;
 }
 
-function sanitize_option_on_update($value) {
+function sanitize_qr_size_option($value) {
 	return sanitize_qr_size($value);
+}
+
+function sanitize_retention_option($value) {
+	return sanitize_retention_days($value);
 }
 
 if (is_admin()) {
 	add_action('admin_init', __NAMESPACE__ . '\\register_plugin_settings');
 	add_action('admin_menu', __NAMESPACE__ . '\\add_plugin_settings_page');
 	add_filter('woocommerce_get_settings_advanced', __NAMESPACE__ . '\\add_wc_settings', 20);
-	add_filter('pre_update_option_' . OPTION_QR_SIZE, __NAMESPACE__ . '\\sanitize_option_on_update', 10, 1);
+	add_filter('pre_update_option_' . OPTION_QR_SIZE, __NAMESPACE__ . '\\sanitize_qr_size_option', 10, 1);
+	add_filter('pre_update_option_' . OPTION_QR_RETENTION_DAYS, __NAMESPACE__ . '\\sanitize_retention_option', 10, 1);
 	add_filter('plugin_action_links_' . plugin_basename(__DIR__ . '/woo-qr-pay.php'), __NAMESPACE__ . '\\add_plugin_action_links');
 }

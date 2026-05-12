@@ -329,21 +329,34 @@ function get_sepa_qr_image_url(array $payment_data, $size = null) {
 }
 
 /**
- * Generate <img> element for SEPA QR payment using base64 data URI.
+ * Generate <img> element for SEPA QR payment.
+ *
+ * @param string $output 'file' (default) for a saved PNG URL, 'data' for inline data: URI.
  */
-function get_sepa_qr_image_tag(array $payment_data, $size = null, $alt = '') {
-	$url = get_sepa_qr_image_data($payment_data, $size, true);
-
-	if (is_wp_error($url)) {
-		return $url;
-	}
-
+function get_sepa_qr_image_tag(array $payment_data, $size = null, $alt = '', $output = 'file') {
 	$alt_text = $alt !== '' ? $alt : __('SEPA payment QR code', 'woo-qr-pay');
 	$size = resolve_qr_size($size, $payment_data);
 
-	$src = (is_string($url) && strpos($url, 'data:image/') === 0)
-		? esc_attr($url)
-		: esc_url($url);
+	if ($output === 'file') {
+		$raw = get_sepa_qr_image_data($payment_data, $size, false);
+		if (is_wp_error($raw)) {
+			return $raw;
+		}
+
+		$url = save_qr_image_file($raw, $payment_data);
+		if (is_wp_error($url)) {
+			return $url;
+		}
+
+		$src = esc_url($url);
+	} else {
+		$url = get_sepa_qr_image_data($payment_data, $size, true);
+		if (is_wp_error($url)) {
+			return $url;
+		}
+
+		$src = esc_attr($url);
+	}
 
 	return sprintf(
 		'<img src="%1$s" width="%2$d" height="%2$d" alt="%3$s" loading="lazy" style="display:block;margin:0 auto;" />',
@@ -408,19 +421,35 @@ function get_pay_by_square_qr_image_url(array $payment_data, $size = null) {
 	return get_pay_by_square_qr_image_data($payment_data, $size, true);
 }
 
-function get_pay_by_square_qr_image_tag(array $payment_data, $size = null, $alt = '') {
-	$url = get_pay_by_square_qr_image_data($payment_data, $size, true);
-
-	if (is_wp_error($url)) {
-		return $url;
-	}
-
+/**
+ * Generate <img> element for PAY by square QR payment.
+ *
+ * @param string $output 'file' (default) for a saved PNG URL, 'data' for inline data: URI.
+ */
+function get_pay_by_square_qr_image_tag(array $payment_data, $size = null, $alt = '', $output = 'file') {
 	$alt_text = $alt !== '' ? $alt : __('PAY by square QR code', 'woo-qr-pay');
 	$size = resolve_qr_size($size, $payment_data);
 
-	$src = (is_string($url) && strpos($url, 'data:image/') === 0)
-		? esc_attr($url)
-		: esc_url($url);
+	if ($output === 'file') {
+		$raw = get_pay_by_square_qr_image_data($payment_data, $size, false);
+		if (is_wp_error($raw)) {
+			return $raw;
+		}
+
+		$url = save_qr_image_file($raw, $payment_data);
+		if (is_wp_error($url)) {
+			return $url;
+		}
+
+		$src = esc_url($url);
+	} else {
+		$url = get_pay_by_square_qr_image_data($payment_data, $size, true);
+		if (is_wp_error($url)) {
+			return $url;
+		}
+
+		$src = esc_attr($url);
+	}
 
 	return sprintf(
 		'<img src="%1$s" width="%2$d" height="%2$d" alt="%3$s" loading="lazy" style="display:block;margin:0 auto;" />',
@@ -601,6 +630,8 @@ function add_qr_to_bacs_account_fields($fields, $order_id) {
 	$qr = null;
 	$description = '';
 
+	$output = apply_filters('woo_qr_pay_bacs_output_format', 'file', $order);
+
 	if ($billing_country === 'SK') {
 		$qr = get_pay_by_square_qr_image_tag(
 			array(
@@ -612,7 +643,8 @@ function add_qr_to_bacs_account_fields($fields, $order_id) {
 				'note'      => sprintf('Objednavka %s', $invoice_ref),
 			),
 			$qr_size,
-			'PAY by square'
+			'PAY by square',
+			$output
 		);
 		$description = __('Pay by square', 'woo-qr-pay');
 	}
@@ -628,7 +660,8 @@ function add_qr_to_bacs_account_fields($fields, $order_id) {
 				'message'   => sprintf('Objednavka %s', $invoice_ref),
 			),
 			$qr_size,
-			'SEPA QR code'
+			'SEPA QR code',
+			$output
 		);
 		$description = __('SEPA QR payment', 'woo-qr-pay');
 	}
@@ -644,6 +677,101 @@ function add_qr_to_bacs_account_fields($fields, $order_id) {
 	);
 
 	return $fields;
+}
+
+/**
+ * Get upload directory info for QR code files.
+ * Creates the directory and adds protection files on first run.
+ *
+ * @return array{dir: string, url: string}
+ */
+function get_qr_upload_dir() {
+	$upload_dir = wp_upload_dir();
+	$dir = $upload_dir['basedir'] . '/woo-qr-pay';
+	$url = $upload_dir['baseurl'] . '/woo-qr-pay';
+
+	if (!file_exists($dir)) {
+		wp_mkdir_p($dir);
+	}
+
+	if (!file_exists($dir . '/index.php')) {
+		@file_put_contents($dir . '/index.php', "<?php\n// Silence is golden.");
+	}
+
+	if (!file_exists($dir . '/.htaccess')) {
+		@file_put_contents($dir . '/.htaccess', "Options -Indexes\n");
+	}
+
+	return array('dir' => $dir, 'url' => $url);
+}
+
+/**
+ * Save raw PNG data to a file with a hard-to-guess name.
+ *
+ * The filename is derived from the context data + content via wp_hash(),
+ * making it unpredictable without the site's secret keys.
+ *
+ * @param  string $png_data Raw PNG binary.
+ * @param  array  $context  Context data for filename derivation.
+ * @return string|\WP_Error  Public URL or error on failure.
+ */
+function save_qr_image_file($png_data, array $context = array()) {
+	if (!is_string($png_data) || $png_data === '') {
+		return new \WP_Error('woo_qr_pay_empty_data', __('Empty QR image data.', 'woo-qr-pay'));
+	}
+
+	$info = get_qr_upload_dir();
+
+	$hash = wp_hash(serialize($context) . $png_data, 'woo-qr-pay');
+	$filename = $hash . '.png';
+	$path = $info['dir'] . '/' . $filename;
+	$url = $info['url'] . '/' . $filename;
+
+	if (file_exists($path)) {
+		return $url;
+	}
+
+	$written = @file_put_contents($path, $png_data);
+	if ($written === false) {
+		return new \WP_Error(
+			'woo_qr_pay_write_failed',
+			__('Could not write QR code image file.', 'woo-qr-pay')
+		);
+	}
+
+	return $url;
+}
+
+/**
+ * Delete QR image files older than the configured retention period.
+ * Falls back to 30 days if the setting is unavailable.
+ */
+function clean_old_qr_files() {
+	$info = get_qr_upload_dir();
+	$handle = @opendir($info['dir']);
+	if (!$handle) {
+		return;
+	}
+
+	$retention_days = function_exists(__NAMESPACE__ . '\\get_configured_retention_days')
+		? get_configured_retention_days()
+		: 30;
+
+	$cutoff = time() - max(1, $retention_days) * DAY_IN_SECONDS;
+
+	while (($file = readdir($handle)) !== false) {
+		if ($file === '.' || $file === '..' || $file === 'index.php' || $file === '.htaccess') {
+			continue;
+		}
+
+		$path = $info['dir'] . '/' . $file;
+
+		if (is_file($path) && @filemtime($path) < $cutoff) {
+			@unlink($path);
+		}
+	}
+
+	closedir($handle);
 }
 
 function allow_data_protocol_for_kses($protocols) {

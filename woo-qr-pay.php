@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Woo Pay With a QR Code
  * Description: Allows customers to pay for their orders using a QR code. Generates a QR code that can be scanned with a mobile device to complete the payment process.
- * Version:     0.0.1
+ * Version:     1.0.0
  * Author:      m4g4
  * License:     GPLv3 or later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -34,8 +34,8 @@ if (!function_exists('woo_qr_pay_get_sepa_qr_image_url')) {
 }
 
 if (!function_exists('woo_qr_pay_get_sepa_qr_image_tag')) {
-	function woo_qr_pay_get_sepa_qr_image_tag(array $payment_data, $size = null, $alt = '') {
-		return \WooQrPay\get_sepa_qr_image_tag($payment_data, $size, $alt);
+	function woo_qr_pay_get_sepa_qr_image_tag(array $payment_data, $size = null, $alt = '', $output = 'file') {
+		return \WooQrPay\get_sepa_qr_image_tag($payment_data, $size, $alt, $output);
 	}
 }
 
@@ -64,8 +64,8 @@ if (!function_exists('woo_qr_pay_get_pay_by_square_qr_image_url')) {
 }
 
 if (!function_exists('woo_qr_pay_get_pay_by_square_qr_image_tag')) {
-	function woo_qr_pay_get_pay_by_square_qr_image_tag(array $payment_data, $size = null, $alt = '') {
-		return \WooQrPay\get_pay_by_square_qr_image_tag($payment_data, $size, $alt);
+	function woo_qr_pay_get_pay_by_square_qr_image_tag(array $payment_data, $size = null, $alt = '', $output = 'file') {
+		return \WooQrPay\get_pay_by_square_qr_image_tag($payment_data, $size, $alt, $output);
 	}
 }
 
@@ -102,5 +102,22 @@ if (!function_exists('woo_qr_pay_render_bacs_qr_styles')) {
 add_filter('woocommerce_bacs_account_fields', 'woo_qr_pay_add_qr_to_bacs_account_fields', 20, 2);
 add_filter('kses_allowed_protocols', 'woo_qr_pay_allow_data_protocol_for_kses', 20, 1);
 add_action('wp_head', 'woo_qr_pay_render_bacs_qr_styles', 20);
+
+if (!function_exists('woo_qr_pay_schedule_cleanup')) {
+	function woo_qr_pay_schedule_cleanup() {
+		if (!wp_next_scheduled('woo_qr_pay_daily_cleanup')) {
+			wp_schedule_event(time(), 'daily', 'woo_qr_pay_daily_cleanup');
+		}
+	}
+}
+
+if (!function_exists('woo_qr_pay_run_cleanup')) {
+	function woo_qr_pay_run_cleanup() {
+		\WooQrPay\clean_old_qr_files();
+	}
+}
+
+add_action('admin_init', 'woo_qr_pay_schedule_cleanup');
+add_action('woo_qr_pay_daily_cleanup', 'woo_qr_pay_run_cleanup');
 
 ?>
