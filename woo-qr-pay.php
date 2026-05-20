@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Woo Pay With a QR Code
  * Description: Allows customers to pay for their orders using a QR code. Generates a QR code that can be scanned with a mobile device to complete the payment process.
- * Version:     1.0.0
+ * Version:     1.0.1
  * Author:      m4g4
  * License:     GPLv3 or later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
@@ -75,12 +75,6 @@ if (!function_exists('woo_qr_pay_get_bacs_account_details')) {
 	}
 }
 
-if (!function_exists('woo_qr_pay_render_order_qr_on_thankyou')) {
-	function woo_qr_pay_render_order_qr_on_thankyou($order_id) {
-		return \WooQrPay\render_order_qr_on_thankyou($order_id);
-	}
-}
-
 if (!function_exists('woo_qr_pay_add_qr_to_bacs_account_fields')) {
 	function woo_qr_pay_add_qr_to_bacs_account_fields($fields, $order_id) {
 		return \WooQrPay\add_qr_to_bacs_account_fields($fields, $order_id);
@@ -93,15 +87,8 @@ if (!function_exists('woo_qr_pay_allow_data_protocol_for_kses')) {
 	}
 }
 
-if (!function_exists('woo_qr_pay_render_bacs_qr_styles')) {
-	function woo_qr_pay_render_bacs_qr_styles() {
-		return \WooQrPay\render_bacs_qr_styles();
-	}
-}
-
 add_filter('woocommerce_bacs_account_fields', 'woo_qr_pay_add_qr_to_bacs_account_fields', 20, 2);
 add_filter('kses_allowed_protocols', 'woo_qr_pay_allow_data_protocol_for_kses', 20, 1);
-add_action('wp_head', 'woo_qr_pay_render_bacs_qr_styles', 20);
 
 if (!function_exists('woo_qr_pay_schedule_cleanup')) {
 	function woo_qr_pay_schedule_cleanup() {

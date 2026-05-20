@@ -502,84 +502,6 @@ function get_bacs_account_details() {
 	);
 }
 
-function render_order_qr_on_thankyou($order_id) {
-	if (!function_exists('wc_get_order')) {
-		error_log('[woo-qr-pay] WooCommerce is not available, cannot render QR on thank-you page.');
-		return;
-	}
-
-	$order = wc_get_order($order_id);
-	if (!$order) {
-		error_log('[woo-qr-pay] Order not found, cannot render QR on thank-you page. order_id=' . (string) $order_id);
-		return;
-	}
-
-	if ($order->get_payment_method() !== 'bacs') {
-		error_log('[woo-qr-pay] Skipping QR on thank-you page because payment method is not bacs. order_id=' . (string) $order_id . ', method=' . (string) $order->get_payment_method());
-		return;
-	}
-
-	$account = get_bacs_account_details();
-	if (!$account) {
-		error_log('[woo-qr-pay] Missing bank account data, cannot render QR on thank-you page. order_id=' . (string) $order_id);
-		return;
-	}
-
-	$billing_country = strtoupper((string) $order->get_billing_country());
-	$invoice_ref = method_exists($order, 'get_order_number') ? $order->get_order_number() : (string) $order->get_id();
-	$amount = (float) $order->get_total();
-	$description = '';
-	$qr = null;
-
-	if ($billing_country === 'SK') {
-		$qr = get_pay_by_square_qr_image_tag(
-			array(
-				'recipient' => $account['recipient'],
-				'iban'      => $account['iban'],
-				'swift'     => $account['bic'],
-				'amount'    => $amount,
-				'vs'        => preg_replace('/\D+/', '', $invoice_ref),
-				'note'      => sprintf('Objednavka %s', $invoice_ref),
-			),
-			null,
-			'PAY by square'
-		);
-		$description = __('Pay by square', 'woo-qr-pay');
-	}
-
-	if (is_wp_error($qr) || empty($qr)) {
-		$qr = get_sepa_qr_image_tag(
-			array(
-				'name'      => $account['recipient'],
-				'iban'      => $account['iban'],
-				'bic'       => $account['bic'],
-				'amount'    => $amount,
-				'reference' => $invoice_ref,
-				'message'   => sprintf('Objednavka %s', $invoice_ref),
-			),
-			null,
-			'SEPA QR code'
-		);
-		$description = __('SEPA QR payment', 'woo-qr-pay');
-	}
-
-	if (is_wp_error($qr) || empty($qr)) {
-		error_log('[woo-qr-pay] QR code generation failed on thank-you page. order_id=' . (string) $order_id . ', reason=' . (is_wp_error($qr) ? $qr->get_error_message() : 'No QR code generated'));
-		return;
-	}
-
-	?>
-
-	<div style="text-align:center;">
-		<?php echo $qr; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-		<?php if ($description !== '') : ?>
-			<p style="margin:8px 0 0;"><?php echo esc_html($description); ?></p>
-		<?php endif; ?>
-	</div>
-		
-	<?php
-}
-
 function add_qr_to_bacs_account_fields($fields, $order_id) {
 	if (!is_array($fields) || !function_exists('wc_get_order')) {
 		return $fields;
@@ -673,7 +595,7 @@ function add_qr_to_bacs_account_fields($fields, $order_id) {
 
 	$fields['qr_code'] = array(
 		'label' => __('QR payment', 'woo-qr-pay'),
-		'value' => '<span class="woo-qr-pay-bacs-field">' . $qr . '<small class="woo-qr-pay-bacs-caption">' . esc_html($description) . '</small></span>',
+		'value' => '<div style="padding:8px 0 4px 0">' . $qr . '</div><div style="text-align:center;font-size:13px;">' . esc_html($description) . '</div>',
 	);
 
 	return $fields;
@@ -784,36 +706,4 @@ function allow_data_protocol_for_kses($protocols) {
 	}
 
 	return $protocols;
-}
-
-function render_bacs_qr_styles() {
-	if (!function_exists('is_order_received_page') || !is_order_received_page()) {
-		return;
-	}
-	?>
-	<style id="woo-qr-pay-bacs-styles">
-		.woocommerce-bacs-bank-details .bacs_details li.qr_code {
-			text-align: left;
-		}
-		.woocommerce-bacs-bank-details .bacs_details li.qr_code strong {
-			font-weight: 400;
-			text-align: left;
-			vertical-align: top;
-		}
-		.woocommerce-bacs-bank-details .bacs_details li.qr_code .woo-qr-pay-bacs-field {
-			display: inline-block;
-			text-align: left;
-			padding: 8px 0;
-		}
-		.woocommerce-bacs-bank-details .bacs_details li.qr_code .woo-qr-pay-bacs-field img {
-			display: block;
-			margin: 0;
-		}
-		.woocommerce-bacs-bank-details .bacs_details li.qr_code .woo-qr-pay-bacs-caption {
-			display: block;
-			margin-top: 4px;
-			text-align: center;
-		}
-	</style>
-	<?php
 }
