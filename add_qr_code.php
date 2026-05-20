@@ -595,7 +595,7 @@ function add_qr_to_bacs_account_fields($fields, $order_id) {
 
 	$fields['qr_code'] = array(
 		'label' => __('QR payment', 'woo-qr-pay'),
-		'value' => '<div style="padding:8px 0 4px 0">' . $qr . '</div><div style="text-align:center;font-size:13px;">' . esc_html($description) . '</div>',
+		'value' => '<div style="padding:8px 0 4px 0">' . $qr . '</div><div style="text-align:center;font-size:13px;width:' . (int) $qr_size . 'px">' . esc_html($description) . '</div>',
 	);
 
 	return $fields;
