@@ -1,0 +1,138 @@
+# Slovak translation of Woo QR Pay.
+# Copyright (C) 2025 m4g4
+# This file is distributed under the GPLv3 or later.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Woo QR Pay 1.0.1\n"
+"Report-Msgid-Bugs-To: https://github.com/m4g4/woo-qr-pay\n"
+"POT-Creation-Date: 2025-01-01 00:00+0000\n"
+"PO-Revision-Date: 2025-01-01 00:00+0000\n"
+"Last-Translator: m4g4\n"
+"Language-Team: Slovak <sk@li.org>\n"
+"Language: sk_SK\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n>=2 && n<=4 ? 1 : 2);\n"
+"X-Generator: opencode\n"
+
+#: add_qr_code.php:24
+msgid "Missing payment recipient name."
+msgstr "Chýba názov príjemcu platby."
+
+#: add_qr_code.php:28
+msgid "Invalid IBAN for PAY by square."
+msgstr "Neplatný IBAN pre PAY by square."
+
+#: add_qr_code.php:32
+msgid "Invalid BIC/SWIFT for PAY by square."
+msgstr "Neplatný BIC/SWIFT pre PAY by square."
+
+#: add_qr_code.php:109
+msgid "PAY by square requires proc_open support on the server."
+msgstr "PAY by square vyžaduje podporu proc_open na serveri."
+
+#: add_qr_code.php:128
+msgid "Unable to initialize PAY by square compressor (xz)."
+msgstr "Nepodarilo sa inicializovať PAY by square kompresor (xz)."
+
+#: add_qr_code.php:145
+msgid "PAY by square compression failed. Ensure xz is available on server."
+msgstr "Kompresia PAY by square zlyhala. Uistite sa, že xz je k dispozícii na serveri."
+
+#: add_qr_code.php:175
+msgid "Missing SEPA recipient name."
+msgstr "Chýba názov príjemcu SEPA platby."
+
+#: add_qr_code.php:179
+msgid "Invalid IBAN for SEPA payment."
+msgstr "Neplatný IBAN pre SEPA platbu."
+
+#: add_qr_code.php:183
+msgid "Invalid BIC/SWIFT code."
+msgstr "Neplatný BIC/SWIFT kód."
+
+#: add_qr_code.php:187
+msgid "Purpose code must be 4 letters."
+msgstr "Účel musí pozostávať zo 4 písmen."
+
+#: add_qr_code.php:295 add_qr_code.php:391
+msgid "Missing local QR library bootstrap. Ensure php-qrcode exists in vendor/php-qrcode."
+msgstr "Chýba lokálna QR knižnica. Uistite sa, že php-qrcode existuje v vendor/php-qrcode."
+
+#: add_qr_code.php:302 add_qr_code.php:398
+msgid "GD extension is required for PNG QR output."
+msgstr "GD rozšírenie je vyžadované pre PNG QR výstup."
+
+#: add_qr_code.php:337
+msgid "SEPA payment QR code"
+msgstr "SEPA platobný QR kód"
+
+#: add_qr_code.php:430
+msgid "PAY by square QR code"
+msgstr "PAY by square QR kód"
+
+#: add_qr_code.php:571
+msgid "Pay by square"
+msgstr "Pay by square"
+
+#: add_qr_code.php:588
+msgid "SEPA QR payment"
+msgstr "SEPA QR platba"
+
+#: add_qr_code.php:597
+msgid "QR payment"
+msgstr "QR platba"
+
+#: add_qr_code.php:642
+msgid "Empty QR image data."
+msgstr "Prázdne QR obrázkové dáta."
+
+#: add_qr_code.php:660
+msgid "Could not write QR code image file."
+msgstr "Nepodarilo sa zapísať súbor QR kódu."
+
+#: settings.php:58
+msgid "QR Settings"
+msgstr "Nastavenia QR"
+
+#: settings.php:65 settings.php:146
+msgid "QR code size (px)"
+msgstr "Veľkosť QR kódu (px)"
+
+#: settings.php:73 settings.php:160
+msgid "Keep QR images for (days)"
+msgstr "Ponechať QR obrázky (dní)"
+
+#: settings.php:88
+msgid "Used as the default QR image size when no explicit size is provided."
+msgstr "Používa sa ako predvolená veľkosť QR obrázka, ak nie je zadaná explicitná veľkosť."
+
+#: settings.php:99
+msgid "QR code image files older than this many days will be deleted automatically."
+msgstr "Súbory QR kódov staršie ako tento počet dní budú automaticky vymazané."
+
+#: settings.php:104 settings.php:115
+msgid "Woo QR Pay Settings"
+msgstr "Nastavenia Woo QR Pay"
+
+#: settings.php:105
+msgid "Woo QR Pay"
+msgstr "Woo QR Pay"
+
+#: settings.php:131
+msgid "Settings"
+msgstr "Nastavenia"
+
+#: settings.php:139
+msgid "Configure default QR rendering for bank transfer payments."
+msgstr "Nakonfigurujte predvolené vykresľovanie QR pre bankové prevody."
+
+#: settings.php:150
+msgid "Used as the default QR image size."
+msgstr "Používa sa ako predvolená veľkosť QR obrázka."
+
+#: settings.php:164
+msgid "QR code image files older than this many days will be deleted by daily cleanup."
+msgstr "Súbory QR kódov staršie ako tento počet dní budú vymazané denným čistením."

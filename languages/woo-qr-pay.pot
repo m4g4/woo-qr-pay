@@ -1,0 +1,138 @@
+# LANGUAGE translation of Woo QR Pay.
+# Copyright (C) 2025 m4g4
+# This file is distributed under the GPLv3 or later.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Woo QR Pay 1.0.1\n"
+"Report-Msgid-Bugs-To: https://github.com/m4g4/woo-qr-pay\n"
+"POT-Creation-Date: 2025-01-01 00:00+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: opencode\n"
+
+#: add_qr_code.php:24
+msgid "Missing payment recipient name."
+msgstr ""
+
+#: add_qr_code.php:28
+msgid "Invalid IBAN for PAY by square."
+msgstr ""
+
+#: add_qr_code.php:32
+msgid "Invalid BIC/SWIFT for PAY by square."
+msgstr ""
+
+#: add_qr_code.php:109
+msgid "PAY by square requires proc_open support on the server."
+msgstr ""
+
+#: add_qr_code.php:128
+msgid "Unable to initialize PAY by square compressor (xz)."
+msgstr ""
+
+#: add_qr_code.php:145
+msgid "PAY by square compression failed. Ensure xz is available on server."
+msgstr ""
+
+#: add_qr_code.php:175
+msgid "Missing SEPA recipient name."
+msgstr ""
+
+#: add_qr_code.php:179
+msgid "Invalid IBAN for SEPA payment."
+msgstr ""
+
+#: add_qr_code.php:183
+msgid "Invalid BIC/SWIFT code."
+msgstr ""
+
+#: add_qr_code.php:187
+msgid "Purpose code must be 4 letters."
+msgstr ""
+
+#: add_qr_code.php:295 add_qr_code.php:391
+msgid "Missing local QR library bootstrap. Ensure php-qrcode exists in vendor/php-qrcode."
+msgstr ""
+
+#: add_qr_code.php:302 add_qr_code.php:398
+msgid "GD extension is required for PNG QR output."
+msgstr ""
+
+#: add_qr_code.php:337
+msgid "SEPA payment QR code"
+msgstr ""
+
+#: add_qr_code.php:430
+msgid "PAY by square QR code"
+msgstr ""
+
+#: add_qr_code.php:571
+msgid "Pay by square"
+msgstr ""
+
+#: add_qr_code.php:588
+msgid "SEPA QR payment"
+msgstr ""
+
+#: add_qr_code.php:597
+msgid "QR payment"
+msgstr ""
+
+#: add_qr_code.php:642
+msgid "Empty QR image data."
+msgstr ""
+
+#: add_qr_code.php:660
+msgid "Could not write QR code image file."
+msgstr ""
+
+#: settings.php:58
+msgid "QR Settings"
+msgstr ""
+
+#: settings.php:65 settings.php:146
+msgid "QR code size (px)"
+msgstr ""
+
+#: settings.php:73 settings.php:160
+msgid "Keep QR images for (days)"
+msgstr ""
+
+#: settings.php:88
+msgid "Used as the default QR image size when no explicit size is provided."
+msgstr ""
+
+#: settings.php:99
+msgid "QR code image files older than this many days will be deleted automatically."
+msgstr ""
+
+#: settings.php:104 settings.php:115
+msgid "Woo QR Pay Settings"
+msgstr ""
+
+#: settings.php:105
+msgid "Woo QR Pay"
+msgstr ""
+
+#: settings.php:131
+msgid "Settings"
+msgstr ""
+
+#: settings.php:139
+msgid "Configure default QR rendering for bank transfer payments."
+msgstr ""
+
+#: settings.php:150
+msgid "Used as the default QR image size."
+msgstr ""
+
+#: settings.php:164
+msgid "QR code image files older than this many days will be deleted by daily cleanup."
+msgstr ""
