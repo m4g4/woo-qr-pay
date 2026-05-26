@@ -6,6 +6,8 @@
  * Author:      m4g4
  * License:     GPLv3 or later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
+ * Text Domain: woo-qr-pay
+ * Domain Path: /languages
  * 
  * Requires at least: 5.6
  * Tested up to: 6.8
@@ -90,6 +92,17 @@ if (!function_exists('woo_qr_pay_allow_data_protocol_for_kses')) {
 add_filter('woocommerce_bacs_account_fields', 'woo_qr_pay_add_qr_to_bacs_account_fields', 20, 2);
 add_filter('kses_allowed_protocols', 'woo_qr_pay_allow_data_protocol_for_kses', 20, 1);
 
+
+if (!function_exists('woo_qr_pay_load_textdomain')) {
+	function woo_qr_pay_load_textdomain() {
+			load_plugin_textdomain(
+				'woo-qr-pay',
+				false,
+				dirname( plugin_basename( __FILE__ ) ) . '/languages/'
+			);
+		}
+}
+
 if (!function_exists('woo_qr_pay_schedule_cleanup')) {
 	function woo_qr_pay_schedule_cleanup() {
 		if (!wp_next_scheduled('woo_qr_pay_daily_cleanup')) {
@@ -104,6 +117,7 @@ if (!function_exists('woo_qr_pay_run_cleanup')) {
 	}
 }
 
+add_action( 'plugins_loaded', 'woo_qr_pay_load_textdomain' );
 add_action('admin_init', 'woo_qr_pay_schedule_cleanup');
 add_action('woo_qr_pay_daily_cleanup', 'woo_qr_pay_run_cleanup');
 
