@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.2
+
+- Fixed PAY by square QR codes embedding the current date by default. The date field is now left empty when no `date` is provided, so banks treat the payment as payable immediately (current date at scan time) and no longer show a "date in the past" warning when the code is scanned later.
+
 ## 1.0.1
 
 - Fixed QR caption layout in BACS emails by adding inline styles

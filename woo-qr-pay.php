@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Woo Pay With a QR Code
  * Description: Allows customers to pay for their orders using a QR code. Generates a QR code that can be scanned with a mobile device to complete the payment process.
- * Version:     1.0.1
+ * Version:     1.0.2
  * Author:      m4g4
  * License:     GPLv3 or later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html

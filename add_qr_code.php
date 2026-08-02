@@ -18,7 +18,7 @@ function build_pay_by_square_payload(array $payment_data) {
 	$vs = isset($payment_data['vs']) ? preg_replace('/\D+/', '', (string) $payment_data['vs']) : '';
 	$ks = isset($payment_data['ks']) ? preg_replace('/\D+/', '', (string) $payment_data['ks']) : '';
 	$ss = isset($payment_data['ss']) ? preg_replace('/\D+/', '', (string) $payment_data['ss']) : '';
-	$date = isset($payment_data['date']) ? preg_replace('/\D+/', '', (string) $payment_data['date']) : gmdate('Ymd');
+	$date = isset($payment_data['date']) ? preg_replace('/\D+/', '', (string) $payment_data['date']) : '';
 
 	if ($recipient === '') {
 		return new \WP_Error('woo_qr_pay_missing_recipient', __('Missing payment recipient name.', 'woo-qr-pay'));
@@ -36,7 +36,7 @@ function build_pay_by_square_payload(array $payment_data) {
 	$vs = substr($vs, 0, 10);
 	$ks = substr($ks, 0, 4);
 	$ss = substr($ss, 0, 10);
-	$date = strlen($date) === 8 ? $date : gmdate('Ymd');
+	$date = strlen($date) === 8 ? $date : '';
 	$note = strtolower(function_exists('remove_accents') ? remove_accents($note) : $note);
 	$note = substr(trim($note), 0, 35);
 	$recipient = substr($recipient, 0, 70);

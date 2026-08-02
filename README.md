@@ -119,7 +119,9 @@ Optional keys:
 - `ks`
 - `ss`
 - `note`
-- `date` (`YYYYMMDD`)
+- `date` (`YYYYMMDD`, optional) — when omitted, the field is left empty so the
+  payment is executed immediately (the bank uses the current date at scan time).
+  Only pass a value here when you want a specific due date.
 
 ### SEPA (`woo_qr_pay_get_sepa_qr_image_*`)
 
